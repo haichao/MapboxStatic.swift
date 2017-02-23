@@ -3,6 +3,7 @@
 #else
     import UIKit
 #endif
+import Polyline
 
 let allowedCharacterSet: CharacterSet = {
     var characterSet = CharacterSet.urlPathAllowed
@@ -393,45 +394,8 @@ open class Path: NSObject, Overlay {
         }
     }
     
-    // based on https://github.com/mapbox/polyline
-    fileprivate func polylineEncode(_ coordinates: [CLLocationCoordinate2D]) -> String {
-
-        func encodeCoordinate(_ coordinate: CLLocationDegrees) -> String {
-
-            var c = Int(round(coordinate * 1e5))
-
-            c = c << 1
-
-            if c < 0 {
-                c = ~c
-            }
-
-            var output = ""
-
-            while c >= 0x20 {
-                output += String(describing: UnicodeScalar((0x20 | (c & 0x1f)) + 63)!)
-                c = c >> 5
-            }
-
-            output += String(describing: UnicodeScalar(c + 63)!)
-
-            return output
-        }
-
-        var output = encodeCoordinate(coordinates[0].latitude) + encodeCoordinate(coordinates[0].longitude)
-
-        for i in 1 ..< coordinates.count {
-            let a = coordinates[i]
-            let b = coordinates[i - 1]
-            output += encodeCoordinate(a.latitude - b.latitude)
-            output += encodeCoordinate(a.longitude - b.longitude)
-        }
-
-        return output
-    }
-    
     open override var description: String {
-        let encodedPolyline = polylineEncode(coordinates).addingPercentEncoding(withAllowedCharacters: allowedCharacterSet)!
+        let encodedPolyline = encodeCoordinates(coordinates).addingPercentEncoding(withAllowedCharacters: allowedCharacterSet)!
         return "path-\(strokeWidth)+\(strokeColor.toHexString())-\(strokeOpacity)+\(fillColor.toHexString())-\(fillOpacity)(\(encodedPolyline))"
     }
 }
